@@ -1,5 +1,6 @@
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { GENRE_LABEL } from '@/data/labels';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/theme';
 import type { Machine } from '@/types';
 
@@ -27,8 +28,9 @@ export function ItemCard({ machine }: ItemCardProps) {
       <View style={styles.info}>
         <Text style={styles.name}>{machine.name}</Text>
         <Text style={styles.meta}>
-          {machine.zone}, última revisión {machine.lastMaintenanceAt}
+          {GENRE_LABEL[machine.genre]}, {machine.zone}
         </Text>
+        <Text style={styles.meta}>Última revisión {machine.lastMaintenanceAt}</Text>
         <StatusBadge status={machine.status} />
         <View style={styles.footer}>
           <Text style={styles.cost}>{machine.tokensPerPlay} fichas</Text>
