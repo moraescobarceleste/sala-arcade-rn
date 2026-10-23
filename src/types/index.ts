@@ -2,7 +2,16 @@ import type { ImageSourcePropType } from 'react-native';
 
 export type MachineStatus = 'available' | 'in-use' | 'maintenance' | 'out-of-service';
 
-export type MachineGenre = 'shooter' | 'racing' | 'pinball' | 'sports' | 'light-gun';
+export type MachineGenre =
+  | 'shooter'
+  | 'racing'
+  | 'pinball'
+  | 'sports'
+  | 'light-gun'
+  | 'crane'
+  | 'fighting'
+  | 'puzzle'
+  | 'rhythm';
 
 export interface Machine {
   id: string;
