@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Sala Arcade",
+    "slug": "sala-arcade",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#14101F"
+    },
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.arcade.salajuegos" },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#14101F"
+      },
+      "package": "com.arcade.salajuegos"
+    }
+  }
+}
