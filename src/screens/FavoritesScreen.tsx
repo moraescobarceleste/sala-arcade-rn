@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import type { ListRenderItem } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -7,17 +7,31 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { ItemCard } from '@/components/ItemCard';
 import { MACHINES } from '@/data/mockData';
 import type { RootTabParamList } from '@/navigation/types';
+import { useArcadeStore } from '@/store/useArcadeStore';
 import { COLORS, SPACING, TYPOGRAPHY } from '@/theme';
 import type { Machine } from '@/types';
-
-const FAVORITES: Machine[] = MACHINES.slice(0, 3);
 
 function ItemSeparator() {
   return <View style={styles.separator} />;
 }
 
+function EmptyFavorites() {
+  return (
+    <View style={styles.empty}>
+      <Text style={styles.emptyTitle}>Aún no tienes favoritas</Text>
+      <Text style={styles.emptyHint}>Toca el corazón de una máquina para guardarla aquí.</Text>
+    </View>
+  );
+}
+
 export function FavoritesScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Favorites'>>();
+  const favoriteIds = useArcadeStore((state) => state.favoriteIds);
+
+  const favorites = useMemo(
+    () => MACHINES.filter((machine) => favoriteIds.includes(machine.id)),
+    [favoriteIds],
+  );
 
   const renderItem: ListRenderItem<Machine> = useCallback(
     ({ item }) => (
@@ -37,13 +51,11 @@ export function FavoritesScreen() {
   return (
     <FlatList
       style={styles.screen}
-      data={FAVORITES}
+      data={favorites}
       keyExtractor={(machine) => machine.id}
       renderItem={renderItem}
       ItemSeparatorComponent={ItemSeparator}
-      ListHeaderComponent={
-        <Text style={styles.hint}>Lista fija por ahora. Pasará a Zustand en la semana 4.</Text>
-      }
+      ListEmptyComponent={EmptyFavorites}
       contentContainerStyle={styles.list}
     />
   );
@@ -55,14 +67,26 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.ink,
   },
   list: {
+    flexGrow: 1,
     padding: SPACING.lg,
-  },
-  hint: {
-    fontSize: TYPOGRAPHY.caption,
-    color: COLORS.muted,
-    marginBottom: SPACING.md,
   },
   separator: {
     height: SPACING.md,
+  },
+  empty: {
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.xl,
+  },
+  emptyTitle: {
+    fontSize: TYPOGRAPHY.heading,
+    fontWeight: '700',
+    color: COLORS.bone,
+    textAlign: 'center',
+  },
+  emptyHint: {
+    fontSize: TYPOGRAPHY.body,
+    color: COLORS.muted,
+    textAlign: 'center',
   },
 });

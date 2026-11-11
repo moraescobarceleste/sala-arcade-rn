@@ -16,8 +16,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ItemCard } from '@/components/ItemCard';
 import { MACHINES } from '@/data/mockData';
 import type { HomeStackParamList } from '@/navigation/types';
+import { useArcadeStore } from '@/store/useArcadeStore';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/theme';
 import type { Machine } from '@/types';
+import { formatTokens } from '@/utils/format';
 import { filterMachines } from '@/utils/search';
 
 function ItemSeparator() {
@@ -27,6 +29,7 @@ function ItemSeparator() {
 export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList, 'HomeList'>>();
   const [query, setQuery] = useState('');
+  const tokenBalance = useArcadeStore((state) => state.tokenBalance);
 
   const visibleMachines = useMemo(() => filterMachines(MACHINES, query), [query]);
   const availableCount = useMemo(
@@ -65,6 +68,7 @@ export function HomeScreen() {
           <Text style={styles.subtitle}>
             {MACHINES.length} máquinas, {availableCount} disponibles
           </Text>
+          <Text style={styles.balance}>Tu saldo: {formatTokens(tokenBalance)}</Text>
           <TextInput
             value={query}
             onChangeText={setQuery}
@@ -113,6 +117,11 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: TYPOGRAPHY.body,
     color: COLORS.muted,
+  },
+  balance: {
+    fontSize: TYPOGRAPHY.body,
+    fontWeight: '700',
+    color: COLORS.screen,
     marginBottom: SPACING.sm,
   },
   search: {

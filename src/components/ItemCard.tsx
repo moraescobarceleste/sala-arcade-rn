@@ -1,6 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { GENRE_LABEL } from '@/data/labels';
+import { useArcadeStore } from '@/store/useArcadeStore';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/theme';
 import type { Machine } from '@/types';
 import { formatTokens } from '@/utils/format';
@@ -14,23 +16,36 @@ interface ItemCardProps {
 
 export function ItemCard({ machine, onPress }: ItemCardProps) {
   const canPlay = machine.status === 'available';
+  const isFavorite = useArcadeStore((state) => state.favoriteIds.includes(machine.id));
+  const toggleFavorite = useArcadeStore((state) => state.toggleFavorite);
+  const spendTokens = useArcadeStore((state) => state.spendTokens);
 
   const handleAction = (): void => {
-    if (canPlay) {
-      Alert.alert(
-        machine.name,
-        `${machine.zone}. Cada partida cuesta ${formatTokens(machine.tokensPerPlay)}.`,
-      );
+    if (!canPlay) {
+      onPress?.();
       return;
     }
-    onPress?.();
+    if (spendTokens(machine.tokensPerPlay)) {
+      Alert.alert(machine.name, `Pagaste ${formatTokens(machine.tokensPerPlay)}. ¡Buena partida!`);
+      return;
+    }
+    Alert.alert('Fichas insuficientes', `Necesitas ${formatTokens(machine.tokensPerPlay)}.`);
   };
 
   return (
     <Pressable onPress={onPress} style={styles.card}>
       <Image source={machine.image} style={styles.image} />
       <View style={styles.info}>
-        <Text style={styles.name}>{machine.name}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.name}>{machine.name}</Text>
+          <Pressable onPress={() => toggleFavorite(machine.id)} hitSlop={SPACING.sm}>
+            <Ionicons
+              name={isFavorite ? 'heart' : 'heart-outline'}
+              size={22}
+              color={isFavorite ? COLORS.cabinet : COLORS.muted}
+            />
+          </Pressable>
+        </View>
         <Text style={styles.meta}>
           {GENRE_LABEL[machine.genre]}, {machine.zone}
         </Text>
@@ -71,7 +86,14 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: SPACING.sm,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SPACING.sm,
+  },
   name: {
+    flex: 1,
     fontSize: TYPOGRAPHY.heading,
     fontWeight: '700',
     color: COLORS.bone,
