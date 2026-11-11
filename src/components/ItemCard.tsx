@@ -3,27 +3,31 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GENRE_LABEL } from '@/data/labels';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/theme';
 import type { Machine } from '@/types';
+import { formatTokens } from '@/utils/format';
 
 import { StatusBadge } from './StatusBadge';
 
 interface ItemCardProps {
   machine: Machine;
+  onPress?: () => void;
 }
 
-export function ItemCard({ machine }: ItemCardProps) {
+export function ItemCard({ machine, onPress }: ItemCardProps) {
   const canPlay = machine.status === 'available';
 
-  const handlePress = (): void => {
-    Alert.alert(
-      machine.name,
-      canPlay
-        ? `${machine.zone}. Cada partida cuesta ${machine.tokensPerPlay} fichas.`
-        : `${machine.zone}. Esta máquina no está disponible ahora.`,
-    );
+  const handleAction = (): void => {
+    if (canPlay) {
+      Alert.alert(
+        machine.name,
+        `${machine.zone}. Cada partida cuesta ${formatTokens(machine.tokensPerPlay)}.`,
+      );
+      return;
+    }
+    onPress?.();
   };
 
   return (
-    <View style={styles.card}>
+    <Pressable onPress={onPress} style={styles.card}>
       <Image source={machine.image} style={styles.image} />
       <View style={styles.info}>
         <Text style={styles.name}>{machine.name}</Text>
@@ -33,9 +37,9 @@ export function ItemCard({ machine }: ItemCardProps) {
         <Text style={styles.meta}>Última revisión {machine.lastMaintenanceAt}</Text>
         <StatusBadge status={machine.status} />
         <View style={styles.footer}>
-          <Text style={styles.cost}>{machine.tokensPerPlay} fichas</Text>
+          <Text style={styles.cost}>{formatTokens(machine.tokensPerPlay)}</Text>
           <Pressable
-            onPress={handlePress}
+            onPress={handleAction}
             style={({ pressed }) => [
               styles.action,
               !canPlay && styles.actionDisabled,
@@ -46,7 +50,7 @@ export function ItemCard({ machine }: ItemCardProps) {
           </Pressable>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

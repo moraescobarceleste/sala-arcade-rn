@@ -9,10 +9,13 @@ import {
   View,
 } from 'react-native';
 import type { ListRenderItem } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ItemCard } from '@/components/ItemCard';
 import { MACHINES } from '@/data/mockData';
+import type { HomeStackParamList } from '@/navigation/types';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/theme';
 import type { Machine } from '@/types';
 import { filterMachines } from '@/utils/search';
@@ -22,6 +25,7 @@ function ItemSeparator() {
 }
 
 export function HomeScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList, 'HomeList'>>();
   const [query, setQuery] = useState('');
 
   const visibleMachines = useMemo(() => filterMachines(MACHINES, query), [query]);
@@ -31,8 +35,13 @@ export function HomeScreen() {
   );
 
   const renderItem: ListRenderItem<Machine> = useCallback(
-    ({ item }) => <ItemCard machine={item} />,
-    [],
+    ({ item }) => (
+      <ItemCard
+        machine={item}
+        onPress={() => navigation.navigate('HomeDetail', { id: item.id, name: item.name })}
+      />
+    ),
+    [navigation],
   );
 
   const renderEmpty = useCallback(
