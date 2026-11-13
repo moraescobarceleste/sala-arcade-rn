@@ -14,13 +14,16 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ItemCard } from '@/components/ItemCard';
-import { MACHINES } from '@/data/mockData';
+import { ErrorView, LoadingView, getErrorMessage } from '@/components/QueryStatus';
+import { useMachines } from '@/hooks/useMachines';
 import type { HomeStackParamList } from '@/navigation/types';
 import { useArcadeStore } from '@/store/useArcadeStore';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/theme';
 import type { Machine } from '@/types';
 import { formatTokens } from '@/utils/format';
 import { filterMachines } from '@/utils/search';
+
+const NO_MACHINES: Machine[] = [];
 
 function ItemSeparator() {
   return <View style={styles.separator} />;
@@ -30,12 +33,18 @@ export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList, 'HomeList'>>();
   const [query, setQuery] = useState('');
   const tokenBalance = useArcadeStore((state) => state.tokenBalance);
+  const { data, isError, error, refetch, isRefetching } = useMachines();
 
-  const visibleMachines = useMemo(() => filterMachines(MACHINES, query), [query]);
+  const machines = data ?? NO_MACHINES;
+  const visibleMachines = useMemo(() => filterMachines(machines, query), [machines, query]);
   const availableCount = useMemo(
-    () => MACHINES.filter((machine) => machine.status === 'available').length,
-    [],
+    () => machines.filter((machine) => machine.status === 'available').length,
+    [machines],
   );
+
+  const handleRefresh = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   const renderItem: ListRenderItem<Machine> = useCallback(
     ({ item }) => (
@@ -50,7 +59,7 @@ export function HomeScreen() {
   const renderEmpty = useCallback(
     () => (
       <View style={styles.empty}>
-        <Text style={styles.emptyTitle}>Ninguna máquina coincide con «{query.trim()}»</Text>
+        <Text style={styles.emptyTitle}>Ninguna máquina coincide con “{query.trim()}”</Text>
         <Text style={styles.emptyHint}>Prueba con el nombre, el género o la zona.</Text>
       </View>
     ),
@@ -66,7 +75,9 @@ export function HomeScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Sala Arcade</Text>
           <Text style={styles.subtitle}>
-            {MACHINES.length} máquinas, {availableCount} disponibles
+            {data === undefined
+              ? 'Conectando con la sala...'
+              : `${machines.length} máquinas, ${availableCount} disponibles`}
           </Text>
           <Text style={styles.balance}>Tu saldo: {formatTokens(tokenBalance)}</Text>
           <TextInput
@@ -81,16 +92,26 @@ export function HomeScreen() {
             clearButtonMode="while-editing"
           />
         </View>
-        <FlatList
-          data={visibleMachines}
-          keyExtractor={(machine) => machine.id}
-          renderItem={renderItem}
-          ItemSeparatorComponent={ItemSeparator}
-          ListEmptyComponent={renderEmpty}
-          contentContainerStyle={styles.list}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-        />
+        {data === undefined ? (
+          isError ? (
+            <ErrorView message={getErrorMessage(error)} onRetry={handleRefresh} />
+          ) : (
+            <LoadingView label="Cargando máquinas..." />
+          )
+        ) : (
+          <FlatList
+            data={visibleMachines}
+            keyExtractor={(machine) => machine.id}
+            renderItem={renderItem}
+            ItemSeparatorComponent={ItemSeparator}
+            ListEmptyComponent={renderEmpty}
+            contentContainerStyle={styles.list}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            refreshing={isRefetching}
+            onRefresh={handleRefresh}
+          />
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

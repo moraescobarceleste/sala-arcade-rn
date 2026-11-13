@@ -5,11 +5,14 @@ import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 import { ItemCard } from '@/components/ItemCard';
-import { MACHINES } from '@/data/mockData';
+import { ErrorView, LoadingView, getErrorMessage } from '@/components/QueryStatus';
+import { useMachines } from '@/hooks/useMachines';
 import type { RootTabParamList } from '@/navigation/types';
 import { useArcadeStore } from '@/store/useArcadeStore';
 import { COLORS, SPACING, TYPOGRAPHY } from '@/theme';
 import type { Machine } from '@/types';
+
+const NO_MACHINES: Machine[] = [];
 
 function ItemSeparator() {
   return <View style={styles.separator} />;
@@ -27,11 +30,16 @@ function EmptyFavorites() {
 export function FavoritesScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Favorites'>>();
   const favoriteIds = useArcadeStore((state) => state.favoriteIds);
+  const { data, isError, error, refetch } = useMachines();
 
   const favorites = useMemo(
-    () => MACHINES.filter((machine) => favoriteIds.includes(machine.id)),
-    [favoriteIds],
+    () => (data ?? NO_MACHINES).filter((machine) => favoriteIds.includes(machine.id)),
+    [data, favoriteIds],
   );
+
+  const handleRetry = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   const renderItem: ListRenderItem<Machine> = useCallback(
     ({ item }) => (
@@ -47,6 +55,14 @@ export function FavoritesScreen() {
     ),
     [navigation],
   );
+
+  if (data === undefined) {
+    return isError ? (
+      <ErrorView message={getErrorMessage(error)} onRetry={handleRetry} />
+    ) : (
+      <LoadingView label="Cargando favoritas..." />
+    );
+  }
 
   return (
     <FlatList
