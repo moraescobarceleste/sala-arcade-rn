@@ -1,8 +1,7 @@
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 
-import { ErrorView, LoadingView, getErrorMessage } from '@/components/QueryStatus';
 import { StatusBadge } from '@/components/StatusBadge';
 import { GENRE_LABEL } from '@/data/labels';
 import { useMachine } from '@/hooks/useMachines';
@@ -26,20 +25,22 @@ function DetailRow({ label, value }: DetailRowProps) {
 
 export function DetailScreen() {
   const { params } = useRoute<RouteProp<HomeStackParamList, 'HomeDetail'>>();
-  const { data: machine, isPending, isError, error, refetch } = useMachine(params.id);
+  const { data: machine, isPending } = useMachine(params.id);
 
   if (isPending) {
-    return <LoadingView label="Cargando máquina..." />;
+    return (
+      <View style={styles.missing}>
+        <ActivityIndicator size="large" color={COLORS.token} />
+      </View>
+    );
   }
 
-  if (isError || !machine) {
+  if (!machine) {
     return (
-      <ErrorView
-        message={isError ? getErrorMessage(error) : `No encontramos “${params.name}”`}
-        onRetry={() => {
-          void refetch();
-        }}
-      />
+      <View style={styles.missing}>
+        <Text style={styles.name}>No encontramos «{params.name}»</Text>
+        <Text style={styles.label}>Código: {params.id}</Text>
+      </View>
     );
   }
 
@@ -67,6 +68,14 @@ const styles = StyleSheet.create({
   content: {
     padding: SPACING.lg,
     gap: SPACING.md,
+  },
+  missing: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.ink,
+    padding: SPACING.lg,
   },
   image: {
     width: '100%',

@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -14,7 +16,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ItemCard } from '@/components/ItemCard';
-import { ErrorView, LoadingView, getErrorMessage } from '@/components/QueryStatus';
 import { useMachines } from '@/hooks/useMachines';
 import type { HomeStackParamList } from '@/navigation/types';
 import { useArcadeStore } from '@/store/useArcadeStore';
@@ -33,7 +34,7 @@ export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList, 'HomeList'>>();
   const [query, setQuery] = useState('');
   const tokenBalance = useArcadeStore((state) => state.tokenBalance);
-  const { data, isError, error, refetch, isRefetching } = useMachines();
+  const { data, isPending, isError, isRefetching, refetch } = useMachines();
 
   const machines = data ?? NO_MACHINES;
   const visibleMachines = useMemo(() => filterMachines(machines, query), [machines, query]);
@@ -59,12 +60,47 @@ export function HomeScreen() {
   const renderEmpty = useCallback(
     () => (
       <View style={styles.empty}>
-        <Text style={styles.emptyTitle}>Ninguna máquina coincide con “{query.trim()}”</Text>
+        <Text style={styles.emptyTitle}>Ninguna máquina coincide con «{query.trim()}»</Text>
         <Text style={styles.emptyHint}>Prueba con el nombre, el género o la zona.</Text>
       </View>
     ),
     [query],
   );
+
+  const renderBody = () => {
+    if (isPending) {
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={COLORS.token} />
+          <Text style={styles.emptyHint}>Cargando máquinas...</Text>
+        </View>
+      );
+    }
+    if (isError) {
+      return (
+        <View style={styles.center}>
+          <Text style={styles.emptyTitle}>No pudimos cargar las máquinas</Text>
+          <Pressable onPress={handleRefresh} style={styles.retry}>
+            <Text style={styles.retryLabel}>Reintentar</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return (
+      <FlatList
+        data={visibleMachines}
+        keyExtractor={(machine) => machine.id}
+        renderItem={renderItem}
+        ItemSeparatorComponent={ItemSeparator}
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        refreshing={isRefetching}
+        onRefresh={handleRefresh}
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -75,9 +111,7 @@ export function HomeScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Sala Arcade</Text>
           <Text style={styles.subtitle}>
-            {data === undefined
-              ? 'Conectando con la sala...'
-              : `${machines.length} máquinas, ${availableCount} disponibles`}
+            {machines.length} máquinas, {availableCount} disponibles
           </Text>
           <Text style={styles.balance}>Tu saldo: {formatTokens(tokenBalance)}</Text>
           <TextInput
@@ -92,26 +126,7 @@ export function HomeScreen() {
             clearButtonMode="while-editing"
           />
         </View>
-        {data === undefined ? (
-          isError ? (
-            <ErrorView message={getErrorMessage(error)} onRetry={handleRefresh} />
-          ) : (
-            <LoadingView label="Cargando máquinas..." />
-          )
-        ) : (
-          <FlatList
-            data={visibleMachines}
-            keyExtractor={(machine) => machine.id}
-            renderItem={renderItem}
-            ItemSeparatorComponent={ItemSeparator}
-            ListEmptyComponent={renderEmpty}
-            contentContainerStyle={styles.list}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            refreshing={isRefetching}
-            onRefresh={handleRefresh}
-          />
-        )}
+        {renderBody()}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -161,6 +176,13 @@ const styles = StyleSheet.create({
   separator: {
     height: SPACING.md,
   },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.md,
+    padding: SPACING.lg,
+  },
   empty: {
     alignItems: 'center',
     gap: SPACING.sm,
@@ -176,5 +198,16 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.body,
     color: COLORS.muted,
     textAlign: 'center',
+  },
+  retry: {
+    backgroundColor: COLORS.token,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+  },
+  retryLabel: {
+    fontSize: TYPOGRAPHY.body,
+    fontWeight: '700',
+    color: COLORS.ink,
   },
 });
