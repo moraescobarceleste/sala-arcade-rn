@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getMachineById, getMachines } from '@/api/machines';
+import { fetchMachine, fetchMachines } from '@/api/machines';
 
 export const machineKeys = {
   all: ['machines'] as const,
@@ -8,9 +8,9 @@ export const machineKeys = {
 };
 
 export function useMachines() {
-  return useQuery({ queryKey: machineKeys.all, queryFn: getMachines });
+  return useQuery({ queryKey: machineKeys.all, queryFn: fetchMachines });
 }
 
 export function useMachine(id: string) {
-  return useQuery({ queryKey: machineKeys.detail(id), queryFn: () => getMachineById(id) });
+  return useQuery({ queryKey: machineKeys.detail(id), queryFn: () => fetchMachine(id) });
 }

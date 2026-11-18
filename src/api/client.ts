@@ -3,57 +3,46 @@ import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 
 import { MACHINES } from '@/data/mockData';
 
-// Cambia estos valores para probar la carga y el error.
-// failureRate: 0 = nunca falla, 1 = siempre falla.
-export const mockApiConfig = {
-  latencyMs: 800,
-  failureRate: 0,
-};
+const NETWORK_DELAY_MS = 600;
 
-const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-function respond<T>(config: InternalAxiosRequestConfig, status: number, data: T): AxiosResponse<T> {
-  return { data, status, statusText: status < 400 ? 'OK' : 'Error', headers: {}, config, request: {} };
-}
-
-function fail(config: InternalAxiosRequestConfig, status: number, message: string): never {
-  const response = respond(config, status, { message });
-  throw new AxiosError(
-    message,
-    status >= 500 ? AxiosError.ERR_BAD_RESPONSE : AxiosError.ERR_BAD_REQUEST,
-    config,
-    {},
-    response,
-  );
-}
+const respond = <T>(
+  config: InternalAxiosRequestConfig,
+  status: number,
+  data: T,
+): AxiosResponse<T> => ({
+  data,
+  status,
+  statusText: status === 200 ? 'OK' : 'Error',
+  headers: {},
+  config,
+});
 
 const mockAdapter: AxiosAdapter = async (config) => {
-  await wait(mockApiConfig.latencyMs);
-
-  if (Math.random() < mockApiConfig.failureRate) {
-    fail(config, 500, 'Error simulado del servidor');
-  }
-
+  await wait(NETWORK_DELAY_MS);
   const url = config.url ?? '';
-  const method = (config.method ?? 'get').toLowerCase();
 
-  if (method === 'get' && url === '/machines') {
+  if (url === '/machines') {
     return respond(config, 200, MACHINES);
   }
 
-  const match = url.match(/^\/machines\/([^/]+)$/);
-  if (method === 'get' && match) {
-    const machine = MACHINES.find((m) => m.id === match[1]);
-    if (!machine) {
-      fail(config, 404, 'Máquina no encontrada');
+  const match = /^\/machines\/(.+)$/.exec(url);
+  if (match) {
+    const machine = MACHINES.find((item) => item.id === match[1]);
+    if (machine) {
+      return respond(config, 200, machine);
     }
-    return respond(config, 200, machine);
   }
 
-  return fail(config, 404, `Ruta no encontrada: ${url}`);
+  const response = respond(config, 404, { message: 'Recurso no encontrado' });
+  throw new AxiosError(
+    'Request failed with status code 404',
+    AxiosError.ERR_BAD_REQUEST,
+    config,
+    undefined,
+    response,
+  );
 };
 
-export const api = axios.create({
-  timeout: 10_000,
-  adapter: mockAdapter,
-});
+export const api = axios.create({ adapter: mockAdapter });

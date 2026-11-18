@@ -2,12 +2,12 @@ import type { Machine } from '@/types';
 
 import { api } from './client';
 
-export async function getMachines(): Promise<Machine[]> {
+export const fetchMachines = async (): Promise<Machine[]> => {
   const { data } = await api.get<Machine[]>('/machines');
   return data;
-}
+};
 
-export async function getMachineById(id: string): Promise<Machine> {
+export const fetchMachine = async (id: string): Promise<Machine> => {
   const { data } = await api.get<Machine>(`/machines/${id}`);
   return data;
-}
+};
