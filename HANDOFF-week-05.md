@@ -1,50 +1,49 @@
-# HANDOFF - Semana 5
+# HANDOFF Semana 05: Axios y TanStack Query v5
 
-Proyecto: `sala-arcade-rn` (Expo SDK 57, React Native, TypeScript, pnpm)
-Rama: `week-05` (creada desde `week-04`)
+> Documento autocontenido. Leer junto a `HANDOFF-week-04.md`.
 
-## Objetivo
-Separar el estado del servidor del estado del cliente: consumir los datos de las máquinas con Axios y TanStack Query, y dejar Zustand solo para lo que es del cliente.
+## 1. Contexto
 
-## Qué se hizo
-- Se instalaron `axios` y `@tanstack/react-query@5` con versiones exactas (`pnpm add -E`).
-- `src/api/queryClient.ts`: cliente de Query con `retry: 1` y `staleTime: 60_000`.
-- `src/api/client.ts`: instancia de Axios con un adaptador propio que responde desde `mockData`. Incluye latencia (`latencyMs: 800`) y tasa de fallos (`failureRate`) configurables para probar los estados de carga y error.
-- `src/api/machines.ts`: funciones tipadas `getMachines()` y `getMachineById(id)`.
-- `src/hooks/useMachines.ts`: hooks `useMachines()` y `useMachine(id)` con `useQuery`, y claves centralizadas en `machineKeys`.
-- `App.tsx`: envuelto con `QueryClientProvider`.
-- `src/components/QueryStatus.tsx`: vistas `LoadingView` y `ErrorView` (con botón Reintentar) y el helper `getErrorMessage`.
-- `HomeScreen`, `DetailScreen` y `FavoritesScreen` ahora leen las máquinas con los hooks en vez de importar `MACHINES`. Home permite refrescar con el gesto de bajar la lista.
-- Zustand (`useArcadeStore`) conserva solo favoritos y saldo de fichas.
+- **Proyecto:** Sala Arcade (React Native, Expo SDK 57, TypeScript). Dominio: machines, tokens, players, maintenance.
+- **Repo:** https://github.com/moraescobarceleste/sala-arcade-rn
+- **Ramas:** `main` (README), `week-01` a `week-05`, encadenadas (no se fusionan a `main`).
+- **Reglas:** paso a paso, pnpm con versiones exactas, conventional commits, un handoff por semana. Alias `@/` apunta a `src/`.
+- **Entorno:** igual que `HANDOFF-week-04.md` (Expo Go SDK 57, pnpm 10.34.8, push con `-c credential.helper=`).
 
-## Decisiones
-- **API simulada con Axios** en lugar de `json-server` o una API pública: funciona en Expo Go sin servidor ni internet, y permite provocar errores a voluntad. Contrapartida: es menos realista que un servidor.
-- **Zustand para estado del cliente, Query para estado del servidor.** Las pantallas combinan ambos (por ejemplo, Favoritas filtra la lista de Query con los ids de Zustand).
-- **Versiones exactas**, sin `^` ni `~`, igual que en las semanas anteriores.
+## 2. Dependencias nuevas (versión exacta)
 
-## Cómo probarlo
-1. `pnpm install` y `pnpm start`.
-2. Abrir en Expo Go (debe coincidir con el SDK 57).
-3. Comprobar: carga inicial, refrescar, detalle (la segunda visita es instantánea por la caché), favoritos.
-4. Error: poner `failureRate: 1` en `src/api/client.ts`, recargar y ver "No pudimos cargar los datos" con Reintentar. Volver a `failureRate: 0` y reintentar.
+```
+axios (ver package.json)
+@tanstack/react-query 5.x (ver package.json)
+```
 
-Resultado: todas las pruebas pasaron en el celular. `failureRate` quedó en `0`.
+## 3. Cambios de la semana
 
-## Commits principales
-- `chore(deps): add axios and tanstack query`
-- `feat(api): add mock axios client, machines service and query hooks`
-- `feat(app): add query provider and status views`
-- `feat(screens): load machines with tanstack query`
+```
+src/api/client.ts          Axios con adaptador propio que simula una API REST (600 ms de retraso, 404)
+src/api/machines.ts        fetchMachines y fetchMachine
+src/api/queryClient.ts     QueryClient (retry 1, staleTime 60 s)
+src/hooks/useMachines.ts   useMachines, useMachine y machineKeys
+App.tsx                    QueryClientProvider
+src/screens/*              Home, Favorites y Detail leen de TanStack Query
+```
 
-## Pendiente y riesgos
-- **No se leyó el README de requisitos de la semana 5** (GitHub bloqueó el acceso a la carpeta del bootcamp). Hay que compararlo con lo hecho. Si pide mutaciones (`useMutation`), invalidación de caché, una API real o una estructura de carpetas distinta, se agrega en un commit nuevo sobre esta rama.
-- `useMachine(id)` hace una petición por máquina y no reutiliza la lista ya cargada. Se podría mejorar con `initialData`.
-- Si un refetch falla pero ya hay datos, el error no se muestra en pantalla.
-- Falta abrir el pull request de `week-05`.
+## 4. Decisiones
 
-## Problemas encontrados (para no repetirlos)
-- **Expo Go:** debe ser la versión que corresponde al SDK del proyecto (57). La 58 no abre el proyecto, y Android no permite instalar una versión más vieja encima de una más nueva (hay que desinstalar primero).
-- **Conexión al celular:** el QR falló y hubo que usar *Enter URL* con `exp://IP:8081`. El error "Failed to download remote update" ocurre si Expo Go conecta antes de que Metro termine de compilar.
-- **Push con error 403:** Windows tenía guardada la credencial de otra cuenta de GitHub. Se resolvió borrándola (`cmdkey /delete:git:https://github.com`) e iniciando sesión con la cuenta dueña del repo.
-- **Túnel (`--tunnel`):** `@expo/ngrok` instalado globalmente con npm no lo encuentra pnpm. No fue necesario al final.
-- **Tildes con `??` al copiar archivos desde PowerShell:** es un problema de codificación al copiar, no de los archivos. Usar `Get-Content -Encoding UTF8` o revisar en VS Code.
+- Estado del servidor (máquinas) en TanStack Query; estado del cliente (favoritos, saldo) en Zustand.
+- La API es simulada con un adaptador de Axios, para funcionar en Expo Go sin servidor. Cambiar a una API real solo exige quitar el `adapter` y definir `baseURL`.
+- Home maneja carga, error con reintento y recarga por arrastre.
+
+## 5. Checklist
+
+- [x] Axios y TanStack Query v5 con versiones exactas
+- [x] Funciones de API tipadas
+- [x] Hooks con claves de query
+- [x] Estados de carga y error
+- [ ] Verificado en el celular (completar tras probar)
+
+## 6. Siguiente: Semana 06 (formularios con React Hook Form y Zod)
+
+```
+git checkout -b week-06 week-05
+```
