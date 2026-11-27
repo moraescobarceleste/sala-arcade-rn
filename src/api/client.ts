@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-
+import type { Machine, NewMachinePayload } from '@/types';
 import { MACHINES } from '@/data/mockData';
 
 const NETWORK_DELAY_MS = 600;
@@ -22,7 +22,19 @@ const respond = <T>(
 const mockAdapter: AxiosAdapter = async (config) => {
   await wait(NETWORK_DELAY_MS);
   const url = config.url ?? '';
-
+  if (url === '/machines' && config.method === 'post') {
+    const payload = JSON.parse(config.data as string) as NewMachinePayload;
+    const machine: Machine = {
+      id: `m-${String(MACHINES.length + 1).padStart(3, '0')}`,
+      ...payload,
+      status: 'available',
+      image: MACHINES[0].image,
+      lastMaintenanceAt: new Date().toISOString().slice(0, 10),
+    };
+    MACHINES.push(machine);
+    return respond(config, 201, machine);
+  }
+  
   if (url === '/machines') {
     return respond(config, 200, MACHINES);
   }

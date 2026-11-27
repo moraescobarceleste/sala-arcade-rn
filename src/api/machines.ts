@@ -1,4 +1,8 @@
-import type { Machine } from '@/types';
+import type { Machine, NewMachinePayload } from '@/types';
+export const createMachine = async (payload: NewMachinePayload): Promise<Machine> => {
+  const { data } = await api.post<Machine>('/machines', payload);
+  return data;
+};
 
 import { api } from './client';
 

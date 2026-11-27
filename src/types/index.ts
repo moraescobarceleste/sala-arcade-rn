@@ -50,3 +50,4 @@ export interface MaintenanceRecord {
   performedAt: string;
   resolved: boolean;
 }
+export type NewMachinePayload = Pick<Machine, 'name' | 'genre' | 'zone' | 'tokensPerPlay'>;

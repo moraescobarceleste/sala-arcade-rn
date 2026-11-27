@@ -1,8 +1,23 @@
 import { z } from 'zod';
 
+import type { MachineGenre } from '@/types';
+
+export const MACHINE_GENRES = [
+  'shooter',
+  'racing',
+  'pinball',
+  'sports',
+  'light-gun',
+  'crane',
+  'fighting',
+  'puzzle',
+  'rhythm',
+] as const satisfies readonly MachineGenre[];
+
 export const machineSchema = z.object({
-  name: z.string().min(3, 'Mínimo 3 caracteres'),
-  type: z.enum(['arcade', 'pinball', 'carreras'], { message: 'Elige un tipo' }),
+  name: z.string().trim().min(3, 'Mínimo 3 caracteres').max(30, 'Máximo 30 caracteres'),
+  genre: z.enum(MACHINE_GENRES, { message: 'Elige un género' }),
+  zone: z.string().trim().min(3, 'Indica la zona (ej. Zona A)'),
   tokensPerPlay: z.coerce
     .number({ message: 'Debe ser un número' })
     .int('Debe ser entero')
